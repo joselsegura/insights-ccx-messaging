@@ -55,6 +55,7 @@ class OCPEngine(ICMEngine):
             with extract(
                 path, timeout=self.extract_timeout, extract_dir=self.extract_tmp_dir
             ) as extraction:
+                log.info("creating broker and context")
                 ctx, broker = initialize_broker(extraction.tmp_dir, broker=broker)
                 self.fire("on_extract", ctx, broker, extraction)
 
@@ -65,12 +66,17 @@ class OCPEngine(ICMEngine):
 
                 output = StringIO()
                 with self.Formatter(broker, stream=output):
+                    log.info("running dr")
                     dr.run_components(self.target_components, self.components_dict, broker=broker)
+                    log.info("running dr - done")
                 output.seek(0)
                 result = output.read()
                 self.fire("on_engine_success", broker, result)
+                log.info("engine suceeded")
                 return result
         except Exception as ex:
+            log.info("process exception!!!")
+            log.info(ex)
             self.fire("on_engine_failure", broker, ex)
             raise
         finally:

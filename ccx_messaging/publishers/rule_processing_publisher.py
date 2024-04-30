@@ -81,8 +81,15 @@ class RuleProcessingPublisher(KafkaPublisher):
         a byte array using UTF-8 encoding and the result of that will be sent
         to the producer to produce a message in the output Kafka topic.
         """
+
+        log.info("publish reached with this data")
+        log.info(input_msg)
+        log.info(report)
+        log.info("--------------------- > let's go!")
+
         try:
             report = json.loads(report)
+            log.info("Report loaded properly")
         except (TypeError, json.decoder.JSONDecodeError):
             raise CCXMessagingError("Could not parse report; report is not in JSON format")
 
@@ -90,17 +97,21 @@ class RuleProcessingPublisher(KafkaPublisher):
             log.info("Report does not contain OCP rules related results; skipping")
             return
 
+        log.info("Report contains OCP rules results; continuing")
+
         report.pop("workload_recommendations", None)
 
         output_msg = {}
         try:
             org_id = int(input_msg["identity"]["identity"]["internal"]["org_id"])
+            log.info("org_id retrieved; continuing")
         except (ValueError, KeyError, TypeError) as err:
             log.warning("Error extracting the OrgID: %s", err)
             raise CCXMessagingError("Error extracting the OrgID") from err
 
         try:
             account_number = int(input_msg["identity"]["identity"]["account_number"])
+            log.info("account_number retrieved; continuing")
         except (ValueError, KeyError, TypeError) as err:
             log.warning("Error extracting the Account number: %s", err)
             account_number = ""
@@ -117,8 +128,11 @@ class RuleProcessingPublisher(KafkaPublisher):
                 "RequestId": input_msg.get("request_id"),
                 "Metadata": {"gathering_time": self.get_gathering_time(input_msg)},
             }
+            log.info("Output message: ", output_msg)
 
             message = json.dumps(output_msg) + "\n"
+
+            log.info("Output message JSON: ", message)
 
             log.debug("Sending response to the %s topic.", self.topic)
             # Convert message string into a byte array.
@@ -147,6 +161,7 @@ class RuleProcessingPublisher(KafkaPublisher):
             )
 
         except KeyError as err:
+            log.warning(err)
             raise CCXMessagingError("Missing expected keys in the input message") from err
 
         except (TypeError, UnicodeEncodeError, JSONDecodeError) as err:

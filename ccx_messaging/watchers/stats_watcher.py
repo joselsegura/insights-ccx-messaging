@@ -123,19 +123,24 @@ class StatsWatcher(EngineWatcher, ConsumerWatcher):
 
     def on_recv(self, input_msg):
         """On received event handler."""
+        LOG.info("StatWatcher - on_recv")
         self._recv_total.inc()
 
         self._start_time = time.time()
         self._reset_times()
         self._reset_archive_metadata()
+        LOG.info("StatWatcher - on_recv done")
 
     def on_filter(self):
         """On filter event handler."""
+        LOG.info("StatWatcher - on_filter")
         self._filtered_total.inc()
+        LOG.info("StatWatcher - on_filter done")
 
     def on_extract(self, ctx, broker, extraction):
         """On extract event handler."""
         # Set archive_type label based on found file
+        LOG.info("StatWatcher - on_extract")
         if os.path.exists(os.path.join(extraction.tmp_dir, "openshift_lightspeed.json")):
             self._archive_metadata["type"] = "ols"
         elif os.path.exists(os.path.join(extraction.tmp_dir, "config", "infrastructure.json")):
@@ -146,9 +151,11 @@ class StatsWatcher(EngineWatcher, ConsumerWatcher):
         self._archive_size.labels(**{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}).observe(
             self._archive_metadata["size"]
         )
+        LOG.info("StatWatcher - on_extract done")
 
     def on_download(self, path):
         """On downloaded event handler."""
+        LOG.info("StatWatcher - on_download")
         archive_size = os.path.getsize(path)
 
         self._archive_metadata["size"] = archive_size
@@ -156,33 +163,41 @@ class StatsWatcher(EngineWatcher, ConsumerWatcher):
 
         self._downloaded_time = time.time()
         self._download_duration.observe(self._downloaded_time - self._start_time)
+        LOG.info("StatWatcher - on_download done")
 
     def on_process(self, input_msg, results):
         """On processed event handler."""
+        LOG.info("StatWatcher - on_process")
         self._processed_total.labels(**{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}).inc()
 
         self._processed_time = time.time()
         self._process_duration.labels(
             **{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}
         ).observe(self._processed_time - self._downloaded_time)
+        LOG.info("StatWatcher - on_process done")
 
     def on_process_timeout(self):
         """On process timeout event handler."""
+        LOG.info("StatWatcher - on_process_timeout")
         self._processed_timeout_total.labels(
             **{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}
         ).inc()
+        LOG.info("StatWatcher - on_process_timeout done")
 
     def on_consumer_success(self, input_msg, broker, results):
         """On consumer success event handler."""
+        LOG.info("StatWatcher - on_consumer_success")
         self._published_total.labels(**{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}).inc()
 
         self._published_time = time.time()
         self._publish_duration.labels(
             **{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}
         ).observe(self._published_time - self._processed_time)
+        LOG.info("StatWatcher - on_consumer_success done")
 
     def on_consumer_failure(self, input_msg, exception):
         """On consumer failure event handler."""
+        LOG.info("StatWatcher - on_consumer_failure")
         self._failures_total.labels(**{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}).inc()
 
         if self._downloaded_time is None:
@@ -198,10 +213,13 @@ class StatsWatcher(EngineWatcher, ConsumerWatcher):
         self._publish_duration.labels(
             **{ARCHIVE_TYPE_LABEL: self._archive_metadata["type"]}
         ).observe(0)
+        LOG.info("StatWatcher - on_consumer_failure done")
 
     def on_not_handled(self, input_msg):
         """On not handled messages success event handler."""
+        LOG.info("StatWatcher - on_not_handled")
         self._not_handling_total.inc()
+        LOG.info("StatWatcher - on_not_handled done")
 
     def _reset_times(self):
         """Set all timestamps with the exception of start time to `None`."""
