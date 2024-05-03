@@ -132,7 +132,7 @@ class RuleProcessingPublisher(KafkaPublisher):
 
             message = json.dumps(output_msg) + "\n"
 
-            log.info("Output message JSON: ", message)
+            log.info("Output message JSON: %s", message)
 
             log.debug("Sending response to the %s topic.", self.topic)
             # Convert message string into a byte array.
