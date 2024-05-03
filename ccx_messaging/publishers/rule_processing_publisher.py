@@ -128,7 +128,7 @@ class RuleProcessingPublisher(KafkaPublisher):
                 "RequestId": input_msg.get("request_id"),
                 "Metadata": {"gathering_time": self.get_gathering_time(input_msg)},
             }
-            log.info("Output message: ", output_msg)
+            log.info("Output message: %s", output_msg)
 
             message = json.dumps(output_msg) + "\n"
 
